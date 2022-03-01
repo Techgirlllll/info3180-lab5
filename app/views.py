@@ -36,11 +36,14 @@ def secure_page():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("secure_page"))
+
     form = LoginForm()
+
     if request.method == "POST" and form.validate_on_submit():
         # change this to actually validate the entire form submission
         # and not just one field
-        if form.username.data:
             # Get the username and password values from the form.
             username = form.username.data
             password = form.password.data
@@ -48,14 +51,21 @@ def login():
             user = UserProfile.query.filter_by(username=username).first()
 
             if user is not None and check_password_hash(user.password, password):
-
-            # get user id, load into session
                 login_user(user)
-                flash("You have been successfully logged in.", "success")
+                flash ('You have been successfully logged in.', 'success')
                 return redirect(url_for("secure_page"))
             else:
                 flash("Username or password is incorrect", "danger")
+    flash_errors(form)
     return render_template("login.html", form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash("You have been logged out.", "danger")
+    return redirect(url_for("home"))
+
 
 
 # user_loader callback. This callback is used to reload the user object from
